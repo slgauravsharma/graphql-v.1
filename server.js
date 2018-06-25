@@ -1,7 +1,7 @@
 import express from "express";
 import { graphqlExpress, graphiqlExpress } from "apollo-server-express";
 import bodyParser from "body-parser";
-import schema from "./schema.js";
+import schema from "./schema/schema.js";
 import mongoose from 'mongoose'
 const server = express();
 const port = 4000;
