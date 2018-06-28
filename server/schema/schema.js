@@ -5,6 +5,7 @@ import {
     GraphQLObjectType, GraphQLString, GraphQLID, GraphQLInt,
     GraphQLList, GraphQLSchema, GraphQLNonNull
 } from 'graphql'
+import mongoose from 'mongoose';
 import { FilterRootFields } from 'graphql-tools';
 import Author from '../models/author'
 import Book from '../models/book'
@@ -117,15 +118,37 @@ const mutation = new GraphQLObjectType({
             args: {
                 name: { type: new GraphQLNonNull(GraphQLString) },
                 genre: { type: new GraphQLNonNull(GraphQLString) },
-                authorId: { type: new GraphQLNonNull(GraphQLString) }
+                authorId: { type: new GraphQLNonNull(GraphQLString) },
+                bookId: { type: GraphQLString }
             },
             resolve(parent, args) {
-                const book = new Book({
-                    name: args.name,
-                    genre: args.genre,
-                    authorId: args.authorId
-                })
-                return book.save()
+                if (args.bookId) {
+                    const id = args.bookId
+                    Book.findOne({ _id: args.bookId })
+                        .then(res => {
+                            if (res) {
+                                Book.findByIdAndUpdate(id, { $set: args }, {}, (err, resp) => {
+                                    if (err) {
+                                        return err
+                                    }
+                                    return resp
+                                })
+                            } else {
+                                throw 'NO_BOOK_FOUND'
+                            }
+                        })
+                        .catch(err => {
+                            return err
+                        })
+                } else {
+                    console.log('args-----  ', args)
+                    const book = new Book({
+                        name: args.name,
+                        genre: args.genre,
+                        authorId: args.authorId
+                    })
+                    return book.save()
+                }
             }
         }
     }

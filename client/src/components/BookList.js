@@ -1,72 +1,115 @@
 import React, { Component } from "react";
 import { graphql } from "react-apollo";
-import { Table, Button } from 'antd'
-import { getBooksQuery } from '../queries/queries'
-import BookDetail from './BookDetail';
-
-
-const onAction = () => {
-  return (
-    <div style={{ display: 'flex' }}>
-      <Button
-        type='delete'
-        style={{ color: 'black', height: '20px', width: '80px', background: '#c4c4d5', cursor: 'pointer' }}
-      >Edit</Button>
-      <Button
-        type='delete'
-        style={{ color: 'red', height: '20px', width: '80px', background: '#c4c4d5', marginLeft: '5px', cursor: 'pointer' }}
-      >Remove</Button>
-    </div>
-  )
-}
-
-const columns = [
-  {
-    title: 'Book Name',
-    dataIndex: 'name',
-    key: 'name',
-    className: 'center',
-    width: 200
-  },
-  {
-    title: 'Action',
-    dataIndex: '',
-    key: '',
-    className: 'center',
-    render: () => onAction(),
-    width: 150
-  }
-]
+import { Table, Icon, Tooltip } from "antd";
+import { getBooksQuery } from "../queries/queries";
+import BookDetail from "./BookDetail";
+import AddEditBookModal from "./AddEditBookModal";
 
 class BookList extends Component {
   constructor(props) {
-    super(props)
+    super(props);
     this.state = {
-      selectedBookId: null
-    }
+      bookData: {},
+      selectedBookId: null,
+      showModal: false,
+      isEditMode: false
+    };
   }
 
   render() {
+    const columns = [
+      {
+        title: "Book Name",
+        dataIndex: "name",
+        key: "name",
+        className: "center",
+        width: 150
+      },
+      {
+        title: "Genre",
+        dataIndex: "genre",
+        key: "genre",
+        className: "center",
+        width: 150
+      },
+      {
+        title: "Action",
+        dataIndex: "",
+        key: "",
+        className: "center",
+        render: rowData => onAction(rowData),
+        width: 150
+      }
+    ];
+    const onAction = rowData => {
+      return (
+        <div style={{ display: "flex", justifyContent: "center" }}>
+          <Icon
+            type="edit"
+            style={{ color: "blue", cursor: "pointer" }}
+            onClick={() => {
+              this.setState({
+                showModal: true,
+                isEditMode: true,
+                bookData: rowData
+              });
+            }}
+          />
+          <Icon
+            type="delete"
+            style={{ color: "red", marginLeft: "20px", cursor: "pointer" }}
+            onClick={() => {}}
+          />
+        </div>
+      );
+    };
+    const selectedBook = this.state.selectedBook;
+    const selBookId = selectedBook && selectedBook.id;
     return (
-      <div style={{ display: 'flex' }}>
-        <Table
-          onRow={(rData) => {
-            return {
-              onClick: () => {
-                this.setState({ selectedBookId: rData.id })
-              },
-            }
-          }}
-          style={{ width: '40%', marginTop: '5px' }}
-          rowKey={y => y.id}
-          columns={columns}
-          pagination={false}
-          dataSource={this.props.data.loading ? [] : this.props.data.books}
-        />
-        <BookDetail bookId={this.state.selectedBookId} />
+      <div>
+        <center>
+          <Tooltip title="Add Book">
+            <Icon
+              style={{ color: "green", cursor: "pointer" }}
+              type="plus-circle-o"
+              onClick={() => {
+                this.setState({ showModal: true, isEditMode: false });
+              }}
+            />
+          </Tooltip>
+        </center>
+        <div style={{ display: "flex" }}>
+          <Table
+            onRow={rData => {
+              return {
+                onClick: () => {
+                  this.setState({ selectedBook: rData });
+                }
+              };
+            }}
+            style={{ width: "50%", marginTop: "5px" }}
+            rowKey={y => y.id}
+            columns={columns}
+            pagination={false}
+            dataSource={this.props.data.loading ? [] : this.props.data.books}
+          />
+          <BookDetail style={{ width: "50%" }} bookId={selBookId} />
+          <AddEditBookModal
+            bookData={this.state.bookData}
+            isEditMode={this.state.isEditMode}
+            showModal={this.state.showModal}
+            closeModal={this.closeModal}
+          />
+        </div>
       </div>
     );
   }
+
+  closeModal = () => {
+    this.setState({
+      showModal: false
+    });
+  };
 }
 
 export default graphql(getBooksQuery)(BookList);
