@@ -9,13 +9,15 @@ class BookDetail extends Component {
     const books =
       this.props.bookId &&
       !data.loading &&
+      data.book &&
       data.book.author.books.map((book, i) => {
         return book.name;
       });
     return (
       <div style={{ width: "50%" }}>
         {this.props.bookId &&
-          !data.loading && (
+          !data.loading &&
+          data.book && (
             <Card style={{ width: "60%", margin: "30%" }}>
               <b>
                 <span>Book Detail</span>

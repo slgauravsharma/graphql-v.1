@@ -3,7 +3,7 @@ import { graphql, compose } from "react-apollo";
 import { Input, Select, Modal, message } from "antd";
 import {
   getAuthorsQuery,
-  addBookMutation,
+  addEditBookMutation,
   getBooksQuery
 } from "../queries/queries";
 
@@ -98,7 +98,7 @@ class AddEditBookModal extends Component {
 
   onSaveBook = () => {
     this.props
-      .addBookMutation({
+      .addEditBookMutation({
         variables: {
           name: this.state.bookName,
           genre: this.state.genre,
@@ -108,11 +108,7 @@ class AddEditBookModal extends Component {
         refetchQueries: [{ query: getBooksQuery }]
       })
       .then(resp => {
-        this.setState({
-          bookName: "",
-          genre: "",
-          authorId: ""
-        });
+        this.setState({ bookName: "", genre: "", authorId: "" });
         message.success(
           !this.props.isEditMode
             ? "Book added successfully"
@@ -125,5 +121,5 @@ class AddEditBookModal extends Component {
 
 export default compose(
   graphql(getAuthorsQuery, { name: "getAuthorsQuery" }),
-  graphql(addBookMutation, { name: "addBookMutation" })
+  graphql(addEditBookMutation, { name: "addEditBookMutation" })
 )(AddEditBookModal);
