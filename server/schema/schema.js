@@ -8,29 +8,13 @@ import {
   GraphQLInt,
   GraphQLList,
   GraphQLSchema,
-  GraphQLNonNull
+  GraphQLNonNull,
+  GraphQLBoolean
 } from "graphql";
 import mongoose from "mongoose";
 import { FilterRootFields } from "graphql-tools";
 import Author from "../models/author";
 import Book from "../models/book";
-
-// // dummy data
-// const books = [
-//     {name: 'The World', genre: 'Fantasy', id: '1', authorId: '1'},
-//     {name: 'Rock', genre: 'Fantasy', id: '2', authorId: '2'},
-//     {name: 'Blind women', genre: 'SC-FI', id: '3', authorId: '3'},
-//     {name: 'Old King', genre: 'He-Sha', id: '4', authorId: '4'},
-//     {name: 'Black Night', genre: 'Fantasy', id: '5', authorId: '1'},
-//     {name: 'Sun', genre: 'Fantasy', id: '6', authorId: '2'},
-// ]
-
-// const authors = [
-//     {name: 'James', age: 44, id: '1'},
-//     {name: 'Juli', age: 36, id: '2'},
-//     {name: 'Kim', age: 56, id: '3'},
-//     {name: 'Cheoge', age: 56, id: '4'}
-// ]
 
 const bookType = new GraphQLObjectType({
   name: "book",
@@ -45,7 +29,8 @@ const bookType = new GraphQLObjectType({
         // return find(authors, {id: parent.authorId})
         return Author.findById(parent.authorId);
       }
-    }
+    },
+    isDeleted: { type: GraphQLBoolean }
   })
 });
 
@@ -58,7 +43,6 @@ const authorType = new GraphQLObjectType({
     books: {
       type: new GraphQLList(bookType),
       resolve(parent, args) {
-        // return filter(books, {authorId: parent.id})
         return Book.find({ authorId: parent.id });
       }
     }
@@ -72,7 +56,6 @@ const rootQuery = new GraphQLObjectType({
       type: bookType,
       args: { id: { type: GraphQLID } },
       resolve(parent, args) {
-        // return find(books, {id: args.id})
         return Book.findById(args.id);
       }
     },
@@ -80,21 +63,18 @@ const rootQuery = new GraphQLObjectType({
       type: authorType,
       args: { id: { type: GraphQLID } },
       resolve(parent, args) {
-        //  return find(authors, {id: args.id})
         return Author.findById(args.id);
       }
     },
     books: {
       type: new GraphQLList(bookType),
       resolve(parent, args) {
-        //   return books
-        return Book.find({});
+        return Book.find({ isDeleted: false });
       }
     },
     authors: {
       type: new GraphQLList(authorType),
       resolve(parent, args) {
-        //  return authors
         return Author.find({});
       }
     }
@@ -151,7 +131,6 @@ const mutation = new GraphQLObjectType({
               return err;
             });
         } else {
-          console.log("args-----  ", args);
           const book = new Book({
             name: args.name,
             genre: args.genre,
@@ -159,6 +138,49 @@ const mutation = new GraphQLObjectType({
           });
           return book.save();
         }
+      }
+    },
+    deleteBook: {
+      type: bookType,
+      args: {
+        bookId: { type: GraphQLString }
+      },
+      resolve(parent, args) {
+        const id = args.bookId;
+        return Book.findOne({ _id: args.bookId })
+          .then(res => {
+            // if (res) {
+            //   return Book.remove({ _id: args.bookId }, (err, resp) => {
+            //     if (!err) {
+            //       return resp;
+            //     } else {
+            //       throw "NO_BOOK_FOUND";
+            //     }
+            //   }).catch(err => {
+            //     throw err;
+            //   });
+            // } else {
+            //   return "Book not present this id";
+            // }
+            if (res) {
+              return Book.findByIdAndUpdate(
+                id,
+                { $set: { isDeleted: true } },
+                {},
+                (err, resp) => {
+                  if (err) {
+                    throw err;
+                  }
+                  return resp;
+                }
+              );
+            } else {
+              throw "Book not present this id";
+            }
+          })
+          .catch(err => {
+            return err;
+          });
       }
     }
   }

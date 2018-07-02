@@ -1,7 +1,7 @@
 import React, { Component } from "react";
-import { graphql } from "react-apollo";
-import { Table, Icon, Tooltip } from "antd";
-import { getBooksQuery } from "../queries/queries";
+import { graphql, compose } from "react-apollo";
+import { Table, Icon, Tooltip, Popconfirm, message } from "antd";
+import { getBooksQuery, deleteBookMutation } from "../queries/queries";
 import BookDetail from "./BookDetail";
 import AddEditBookModal from "./AddEditBookModal";
 
@@ -41,6 +41,20 @@ class BookList extends Component {
         width: 150
       }
     ];
+
+    const confirmBookDelete = () => {
+      this.props
+        .deleteBookMutation({
+          variables: {
+            bookId: this.state.selectedBook.id
+          },
+          refetchQueries: [{ query: getBooksQuery }]
+        })
+        .then(resp => {
+          message.success("Book deleted successfully");
+        });
+    };
+
     const onAction = rowData => {
       return (
         <div style={{ display: "flex", justifyContent: "center" }}>
@@ -55,11 +69,19 @@ class BookList extends Component {
               });
             }}
           />
-          <Icon
-            type="delete"
-            style={{ color: "red", marginLeft: "20px", cursor: "pointer" }}
-            onClick={() => {}}
-          />
+          <Popconfirm
+            placement="bottom"
+            title="Are you sure you want to delete ?"
+            onConfirm={confirmBookDelete}
+            okText="Yes"
+            cancelText="No"
+          >
+            <Icon
+              type="delete"
+              style={{ color: "red", marginLeft: "20px", cursor: "pointer" }}
+              onClick={() => {}}
+            />
+          </Popconfirm>
         </div>
       );
     };
@@ -91,7 +113,11 @@ class BookList extends Component {
             rowKey={y => y.id}
             columns={columns}
             pagination={false}
-            dataSource={this.props.data.loading ? [] : this.props.data.books}
+            dataSource={
+              this.props.getBooksQuery.books
+                ? this.props.getBooksQuery.books
+                : []
+            }
           />
           <BookDetail style={{ width: "50%" }} bookId={selBookId} />
           <AddEditBookModal
@@ -112,4 +138,7 @@ class BookList extends Component {
   };
 }
 
-export default graphql(getBooksQuery)(BookList);
+export default compose(
+  graphql(getBooksQuery, { name: "getBooksQuery" }),
+  graphql(deleteBookMutation, { name: "deleteBookMutation" })
+)(BookList);
